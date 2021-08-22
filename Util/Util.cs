@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using Utf8Json;
-namespace CoreCoder_Studio.Util
+namespace ThaumaStudio.Util
 {
     public static class Util
     {
@@ -29,19 +29,27 @@ namespace CoreCoder_Studio.Util
                 /// Read name, desc, uuid
                 projectInfo.name = json["header"]["name"];
                 projectInfo.description = json["header"]["description"];
-                projectInfo.uuid = json["header"]["description"];
+                projectInfo.uuid = json["header"]["uuid"];
 
                 /// Read project version
                 projectInfo.version = String.Format("v{0}.{1}.{2}", json["header"]["version"][0], json["header"]["version"][1], json["header"]["version"][2]);
-
+                
                 /// Add dependencies' uuid to the array
-                if(json["dependencies"])
-                foreach (var pack in json["dependencies"]) {
+                if(json.ContainsKey("dependencies"))
+                foreach (var pack in json["dependencies"])
+                {
                     projectInfo.dependencies.Add(pack["uuid"] as String);
                 }
+
+                if (json.ContainsKey("modules"))
+                    projectInfo.type = json["modules"][0]["type"]; // "data" or "resources"
+                
             }
-            catch (Exception e) { 
+            catch (Exception e) {
                 // Do nothing, just return a broken pack data(default)
+                //MessageBox.Show("Error reading pack data. " + e.Message + e.StackTrace);
+                projectInfo.name = Path.GetFileName(path);
+                projectInfo.description = "Error reading pack info";
             }
 
             return projectInfo;
@@ -55,12 +63,13 @@ namespace CoreCoder_Studio.Util
             {
                 // Checks if there's dependencies or not, if does, add it
                 String dependencies =  project.dependencies.Count > 0 ?
-                String.Format(@",""dependencies"": [
-                    {{
-                        ""uuid"": ""{0}"",
-                        ""version"": [1, 0, 0]
-                    }}
-                ]", project.dependencies[0])
+                String.Format(@",
+    ""dependencies"": [
+        {{
+            ""uuid"": ""{0}"",
+            ""version"": [1, 0, 0]
+        }}
+    ]", project.dependencies[0])
                 : "";
 
                 result = String.Format(@"{{
@@ -80,8 +89,7 @@ namespace CoreCoder_Studio.Util
             ""uuid"": ""{4}"",
             ""version"": [1, 0, 0]
         }}
-    ]
-    {5}
+    ]{5}
 }}", 
             project.name, project.description, project.uuid, project.type, Guid.NewGuid().ToString(), dependencies);
             }
@@ -114,7 +122,7 @@ namespace CoreCoder_Studio.Util
         public List<String> dependencies = new List<string>();
         public String version = "";
         public String path = "";
-        public String type = "data";
+        public String type = "data"; // "data" or "resources"
 
         public String ToReadableString() {
             return String.Format("{0}\n{1}\n{2}{3}", name, description, version, dependencies.Count > 0? String.Format("\n({0}) Dependencies", dependencies.Count) : "");

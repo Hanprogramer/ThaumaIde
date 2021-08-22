@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-namespace ThaumaStudio.Util
+
+namespace ThaumaStudio.Controls
 {
-    public static class JSONTemplate
+    public class CCTabClass
     {
     }
 }

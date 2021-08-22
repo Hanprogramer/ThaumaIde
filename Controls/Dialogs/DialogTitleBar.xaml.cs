@@ -14,7 +14,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace CoreCoder_Studio.Controls.Dialogs
+namespace ThaumaStudio.Controls.Dialogs
 {
     /// <summary>
     /// Interaction logic for DialogTitleBar.xaml

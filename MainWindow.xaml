@@ -3,11 +3,12 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:CoreCoder_Studio"
+        xmlns:local="clr-namespace:ThaumaStudio"
         xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
-        xmlns:Controls="clr-namespace:CoreCoder_Studio.Controls" xmlns:shell="http://schemas.microsoft.com/netfx/2009/xaml/presentation" x:Class="CoreCoder_Studio.MainWindow"
+        xmlns:Controls="clr-namespace:ThaumaStudio.Controls" xmlns:shell="http://schemas.microsoft.com/netfx/2009/xaml/presentation" x:Class="ThaumaStudio.MainWindow"
         mc:Ignorable="d"
-        Style="{StaticResource ResourceKey=CoreCoder_Studio.MainWindow}"
+        xmlns:toolkit="clr-namespace:Xceed.Wpf.Toolkit;assembly=Xceed.Wpf.Toolkit"
+        Style="{StaticResource CoreCoderWindow}"
         
         Title="CoreCoder:Studio" Height="450" Width="800" ResizeMode="CanResizeWithGrip" WindowStyle="ThreeDBorderWindow" WindowStartupLocation="CenterScreen">
     <shell:WindowChrome.WindowChrome>
@@ -67,29 +68,28 @@
         </Border.Style>
         <Grid Margin="0,0,0,0">
             <Controls:TitleBar x:Name="TitleBar"  VerticalAlignment="Top" Margin="0,0,0,0" Height="417"/>
-            
             <ScrollViewer Margin="0,34,0,0" Background="#FF0F0F0F">
                 <StackPanel Margin="8,8,8,8">
                     <StackPanel Orientation="Horizontal">
-                        <Button Style="{StaticResource ResourceKey=ProjectButton}">
+                        <Button Style="{StaticResource ResourceKey=ProjectButton}" Click="OpenCreateDialog" ToolTip="Create a new project">
                             <StackPanel>
                                 <Image Source="/Resources/icons/new.png" Width="50" Height="50"></Image>
                                 <TextBlock TextAlignment="Center">New</TextBlock>
                             </StackPanel>
                         </Button>
-                        <Button Style="{StaticResource ResourceKey=ProjectButton}">
+                        <Button Style="{StaticResource ResourceKey=ProjectButton}" ToolTip="Import an existing addon/pack." Click="Import_Click">
                             <StackPanel>
                                 <Image Source="/Resources/icons/input.png" Width="50" Height="50"></Image>
                                 <TextBlock TextAlignment="Center">Import</TextBlock>
                             </StackPanel>
                         </Button>
-                        <Button Style="{StaticResource ResourceKey=ProjectButton}">
+                        <Button Style="{StaticResource ResourceKey=ProjectButton}" ToolTip="Open settings.">
                             <StackPanel>
                                 <Image Source="/Resources/icons/settings.png" Width="50" Height="50"></Image>
                                 <TextBlock TextAlignment="Center">Settings</TextBlock>
                             </StackPanel>
                         </Button>
-                        <Button Style="{StaticResource ResourceKey=ProjectButton}" Click="Discord_Join_Click">
+                        <Button Style="{StaticResource ResourceKey=ProjectButton}" Click="Discord_Join_Click" ToolTip="Join our official CoreCoder discord server.">
                             <StackPanel>
                                 <Image Source="/Resources/icons/discord.png" Width="50" Height="50"></Image>
                                 <TextBlock TextAlignment="Center">Join Discord</TextBlock>

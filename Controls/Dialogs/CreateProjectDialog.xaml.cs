@@ -1,4 +1,4 @@
-﻿using CoreCoder_Studio.Util;
+﻿using ThaumaStudio.Util;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -15,7 +15,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
-namespace CoreCoder_Studio.Controls.Dialogs
+namespace ThaumaStudio.Controls.Dialogs
 {
     /// <summary>
     /// Interaction logic for CreateProjectDialog.xaml

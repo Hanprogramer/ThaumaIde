@@ -14,7 +14,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace CoreCoder_Studio.Controls
+namespace ThaumaStudio.Controls
 {
     /// <summary>
     /// Interaction logic for HeaderText.xaml

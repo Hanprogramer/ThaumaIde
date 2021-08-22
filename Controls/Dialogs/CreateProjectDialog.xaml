@@ -1,12 +1,12 @@
-﻿<Window x:Class="CoreCoder_Studio.Controls.Dialogs.CreateProjectDialog"
+﻿<Window x:Class="ThaumaStudio.Controls.Dialogs.CreateProjectDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:CoreCoder_Studio.Controls.Dialogs" xmlns:shell="http://schemas.microsoft.com/netfx/2009/xaml/presentation"
+        xmlns:local="clr-namespace:ThaumaStudio.Controls.Dialogs" xmlns:shell="http://schemas.microsoft.com/netfx/2009/xaml/presentation"
         mc:Ignorable="d"
         
-        Style="{StaticResource ResourceKey=CoreCoder_Studio.Controls.Dialogs}"
+        Style="{StaticResource ResourceKey=ThaumaStudio.Controls.Dialogs}"
         Title="CreateProjectDialog" Height="324" Width="616" WindowStartupLocation="CenterScreen">
     <shell:WindowChrome.WindowChrome>
         <shell:WindowChrome

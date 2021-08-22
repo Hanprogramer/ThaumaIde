@@ -18,24 +18,29 @@ using System.Windows.Interop;
 using System.Windows.Controls.Primitives;
 using System.ComponentModel;
 
-namespace CoreCoder_Studio.Controls
+namespace ThaumaStudio.Controls
 {
     /// <summary>
     /// Interaction logic for TitleBar.xaml
     /// </summary>
     public partial class TitleBar : UserControl
     {
+        public Window w;
         public TitleBar()
         {
             InitializeComponent();
-            RefreshMaximizeRestoreButton();
-
             // Detect when the variable changes
             var dpd = DependencyPropertyDescriptor.FromProperty(TitleProperty, typeof(TitleBar));
             dpd.AddValueChanged(this, (sender, args) =>
             {
                 this.TitleText.Content = this.Title;
             });
+        }
+        
+        protected override void OnInitialized(EventArgs e)
+        {
+            base.OnInitialized(e);
+            w = Window.GetWindow(this);
         }
 
         /* Custom Property */
@@ -46,10 +51,15 @@ namespace CoreCoder_Studio.Controls
             set { SetValue(TitleProperty, value); }
         }
 
+        public void RefetchParent() {
+            if (w == null)
+                w = Window.GetWindow(this);
+        }
+
         /* Methods */
         public void RefreshMaximizeRestoreButton()
         {
-            if (Application.Current.MainWindow.WindowState == WindowState.Maximized)
+            if (w.WindowState == WindowState.Maximized)
             {
                 this.maximizeButton.Visibility = Visibility.Collapsed;
                 this.restoreButton.Visibility = Visibility.Visible;
@@ -64,25 +74,25 @@ namespace CoreCoder_Studio.Controls
         }
         private void OnMinimizeButtonClick(object sender, RoutedEventArgs e)
         {
-            Application.Current.MainWindow.WindowState = WindowState.Minimized;
+            w.WindowState = WindowState.Minimized;
         }
 
         private void OnMaximizeRestoreButtonClick(object sender, RoutedEventArgs e)
         {
-            if (Application.Current.MainWindow.WindowState == WindowState.Maximized)
+            if (w.WindowState == WindowState.Maximized)
             {
-                Application.Current.MainWindow.WindowState = WindowState.Normal;
+                w.WindowState = WindowState.Normal;
             }
             else
             {
-                Application.Current.MainWindow.WindowState = WindowState.Maximized;
+                w.WindowState = WindowState.Maximized;
             }
             RefreshMaximizeRestoreButton();
         }
 
         private void OnCloseButtonClick(object sender, RoutedEventArgs e)
         {
-            Application.Current.MainWindow.Close();
+            w.Close();
         }
 
     }
