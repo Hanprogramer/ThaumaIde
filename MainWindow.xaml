@@ -10,7 +10,7 @@
         xmlns:toolkit="clr-namespace:Xceed.Wpf.Toolkit;assembly=Xceed.Wpf.Toolkit"
         Style="{StaticResource CoreCoderWindow}"
         
-        Title="CoreCoder:Studio" Height="450" Width="800" ResizeMode="CanResizeWithGrip" WindowStyle="ThreeDBorderWindow" WindowStartupLocation="CenterScreen">
+        Title="Thauma Studio" Height="450" Width="800" ResizeMode="CanResizeWithGrip" WindowStyle="ThreeDBorderWindow" WindowStartupLocation="CenterScreen">
     <shell:WindowChrome.WindowChrome>
         <shell:WindowChrome
             ResizeBorderThickness="8"
@@ -77,7 +77,7 @@
                                 <TextBlock TextAlignment="Center">New</TextBlock>
                             </StackPanel>
                         </Button>
-                        <Button Style="{StaticResource ResourceKey=ProjectButton}" ToolTip="Import an existing addon/pack." Click="Import_Click">
+                        <Button Style="{StaticResource ResourceKey=ProjectButton}" ToolTip="Import an existing addon/pack." Click="Import_Click" IsEnabled="False">
                             <StackPanel>
                                 <Image Source="/Resources/icons/input.png" Width="50" Height="50"></Image>
                                 <TextBlock TextAlignment="Center">Import</TextBlock>
@@ -89,21 +89,19 @@
                                 <TextBlock TextAlignment="Center">Settings</TextBlock>
                             </StackPanel>
                         </Button>
-                        <Button Style="{StaticResource ResourceKey=ProjectButton}" Click="Discord_Join_Click" ToolTip="Join our official CoreCoder discord server.">
+                        <Button Style="{StaticResource ResourceKey=ProjectButton}" Click="Discord_Join_Click" ToolTip="Join our official Thauma discord server.">
                             <StackPanel>
                                 <Image Source="/Resources/icons/discord.png" Width="50" Height="50"></Image>
                                 <TextBlock TextAlignment="Center">Join Discord</TextBlock>
                             </StackPanel>
                         </Button>
                     </StackPanel>
-                    <Controls:HeaderText Text="Development Behavior Packs" Height="auto" Margin="0,0,0,0" VerticalAlignment="Top" HorizontalAlignment="Stretch"/>
-                    <WrapPanel Name="bpDevCont" Background="#FF111111"></WrapPanel>
-                    <Controls:HeaderText Text="Behavior Packs" HorizontalAlignment="Stretch" Height="auto" Margin="0,0,0,0" VerticalAlignment="Top"/>
-                    <WrapPanel Name="bpCont" Background="#FF111111"></WrapPanel>
-                    <Controls:HeaderText Text="Development Resource Packs" HorizontalAlignment="Stretch" Height="auto" Margin="0,0,0,0" VerticalAlignment="Top"/>
-                    <WrapPanel Name="rpDevCont" Background="#FF111111"></WrapPanel>
-                    <Controls:HeaderText Text="Resource Packs" HorizontalAlignment="Stretch" Height="auto" Margin="0,0,0,0" VerticalAlignment="Top"/>
-                    <WrapPanel Name="rpCont" Background="#FF111111"></WrapPanel>
+                    <Controls:HeaderText Text="News" Height="auto" Margin="0,0,0,0" VerticalAlignment="Top" HorizontalAlignment="Stretch"/>
+                    <WrapPanel Name="newsCont" Background="#FF111111"></WrapPanel>
+                    <Controls:HeaderText Text="Favourites" HorizontalAlignment="Stretch" Height="auto" Margin="0,0,0,0" VerticalAlignment="Top"/>
+                    <WrapPanel Name="favCont" Background="#FF111111"></WrapPanel>
+                    <Controls:HeaderText Text="Projects" HorizontalAlignment="Stretch" Height="auto" Margin="0,0,0,0" VerticalAlignment="Top"/>
+                    <WrapPanel Name="projCont" Background="#FF111111"></WrapPanel>
                 </StackPanel>
             </ScrollViewer>
         </Grid>

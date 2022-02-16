@@ -9,6 +9,7 @@
         xmlns:ave="http://icsharpcode.net/sharpdevelop/avalonedit"
         xmlns:ct="clr-namespace:ChromeTabs;assembly=ChromeTabs"
         xmlns:avd="https://github.com/Dirkster99/AvalonDock"
+        xmlns:themes="clr-namespace:ThaumaStudio.Themes"
         xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
         
         Style="{StaticResource CoreCoderWindow}"
@@ -38,7 +39,7 @@
                     </DataTrigger>
                     <DataTrigger Binding="{Binding WindowState, RelativeSource={RelativeSource AncestorType=Window}}" 
                                  Value="Normal">
-                        <Setter Property="Margin" Value="8,0,8,8"/>
+                        <Setter Property="Margin" Value="2,0,2,2"/>
                     </DataTrigger>
                 </Style.Triggers>
             </Style>
@@ -60,14 +61,49 @@
                 <StackPanel></StackPanel>
             </DockPanel>
 
+            <ToolBar DockPanel.Dock="Top" Height="36">
+                <!--Toolbar-->
+                <Button Click="ButtonPlay_Click" ToolTip="Play the game">
+                    <Image Source="/Resources/icons/play.png"/>
+                </Button>
+                <Button>
+                    <Image Source="/Resources/icons/settings.png"/>
+                </Button>
+                <Separator/>
+                <Button>
+                    <Image Source="/Resources/icons/save.png"/>
+                </Button>
+                <Button Click="ButtonExport_Click" ToolTip="Export the game">
+                    <Image Source="/Resources/icons/input.png"/>
+                </Button>
+                <Button>
+                    <Image Source="/Resources/icons/new.png"/>
+                </Button>
+                <Button>
+                    <Image Source="/Resources/icons/folder.png"/>
+                </Button>
+            </ToolBar>
+
             <avd:DockingManager Margin="0,0,0,0" x:Name="AvalonDockMain">
                 <avd:DockingManager.Theme>
-                    <avd:Vs2013DarkTheme/>
+                    <themes:AvalonDockThaumaTheme/>
                 </avd:DockingManager.Theme>
                 <avd:LayoutRoot>
                     <avd:LayoutPanel x:Name="Asdsad">
-                        <avd:LayoutDocumentPane x:Name="Documents">
-                        </avd:LayoutDocumentPane>
+                        <LayoutPanel Orientation="Vertical">
+                            <avd:LayoutDocumentPane x:Name="Documents">
+                            </avd:LayoutDocumentPane>
+
+                            <avd:LayoutAnchorablePane DockHeight="200">
+                                <LayoutAnchorable Title="Output">
+                                    <TextBox Name="TextBoxOutput" 
+                                         TextWrapping="Wrap" 
+                                         AcceptsReturn="True" 
+                                         IsReadOnly="True"
+                                         VerticalAlignment="Stretch" />
+                                </LayoutAnchorable>
+                            </avd:LayoutAnchorablePane>
+                        </LayoutPanel>
                         <avd:LayoutAnchorablePane DockWidth="256">
                             <avd:LayoutAnchorable Title="File explorer" x:Name="FileBrowserPanel">
                                 <DockPanel VerticalAlignment="Stretch">
@@ -78,11 +114,12 @@
                                             <Style TargetType="{x:Type TreeViewItem}">
                                                 <EventSetter Event="MouseDoubleClick" Handler="FileBrowserItem_MouseDoubleClick" />
                                                 <EventSetter Event="MouseUp" Handler="FileBrowserItem_MouseClick" />
+                                                
                                             </Style>
                                         </TreeView.ItemContainerStyle>
                                         <TreeView.ItemTemplate>
                                             <HierarchicalDataTemplate ItemsSource="{Binding Path=Contents}">
-                                                <StackPanel Orientation="Horizontal" Cursor="Hand">
+                                                <StackPanel Orientation="Horizontal" Cursor="Hand" ContextMenu="{Binding Path=ContextMenu}">
                                                     <Image Margin="0,0,4,0" Height="16"  Source=  "{Binding Path=Icon}" Stretch="Fill" StretchDirection="DownOnly" VerticalAlignment="Center" />
                                                     <TextBlock Text="{Binding Path=Filename}" FontSize="16" />
                                                 </StackPanel>

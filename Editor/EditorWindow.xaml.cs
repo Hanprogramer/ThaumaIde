@@ -24,6 +24,10 @@ using ICSharpCode.AvalonEdit.Highlighting;
 using System.Xml;
 using System.Reflection;
 using System.ComponentModel;
+using System.Text.RegularExpressions;
+using System.Diagnostics;
+using ThaumaStudio.Util;
+using static ThaumaStudio.Util.IconChanger;
 
 namespace ThaumaStudio.Editor
 {
@@ -32,6 +36,7 @@ namespace ThaumaStudio.Editor
     /// </summary>
     public partial class EditorWindow : Window
     {
+        public string projectPath = ""; // will be set from MainWindow
         public static Uri icFolder = new Uri($"pack://application:,,,/Resources/icons/folder.png", UriKind.Absolute);
         public static Uri icFile = new Uri($"pack://application:,,,/Resources/icons/file.png", UriKind.Absolute);
         public static Uri icArchive = new Uri($"pack://application:,,,/Resources/icons/archive.png", UriKind.Absolute);
@@ -47,17 +52,35 @@ namespace ThaumaStudio.Editor
         public BitmapSource bmpSaveAs = new BitmapImage(icSaveAs);
         public ObservableCollection<CCTabClass> ItemCollection { get; set; }
         public CCTabClass SelectedTab { get; set; }
+        public static EditorWindow Instance;
+        public ContextMenu FileBrowserContextMenu = new ContextMenu();
+
+        public Dictionary<string, LayoutDocument> openedFiles = new Dictionary<string, LayoutDocument>(); // key: filepath, value: tab 
+
+        public FontFamily FFSourceCodePro;
+        IHighlightingDefinition LuaHighlightDef;
 
         //public Dictionary<string, FileBrowserData>
 
         public EditorWindow()
         {
             InitializeComponent();
+            Instance = this;
             this.TitleBar.w = this;
             this.TitleBar.RefreshMaximizeRestoreButton();
-            this.RefreshFileBrowser();
+            FFSourceCodePro = new FontFamily(new Uri("pack://application:,,,/"), "./Resources/font/#Source Code Pro Medium");
+
+            // Initialize the File Browser Context Menu
+            MenuItem createFolder = new MenuItem();
+            createFolder.Header = "Create folder";
+            createFolder.Click += FileBrowser_CreateFolderClick;
+            FileBrowserContextMenu.Items.Add(createFolder);
         }
 
+        private void FileBrowser_CreateFolderClick(object sender, RoutedEventArgs e)
+        {
+            
+        }
 
         public bool askYesNo(string message, string title)
         {
@@ -75,30 +98,51 @@ namespace ThaumaStudio.Editor
             this.TitleBar.RefreshMaximizeRestoreButton();
         }
 
-        public void RefreshFileBrowser() {
+        public void RefreshFileBrowser()
+        {
             /// Refresh the content of the file browser
             FileBrowser.Items.Clear();
-            //FileBrowser.Items.Add(new FileBrowserData { Filename = "zzz", Icon = null });
 
-            string bp_path = Util.Util.com_mojang_path + "/" + Application.Current.Properties["bp_folder"];
-            FileBrowserData bp_item = new FileBrowserData { Filename = Path.GetFileName(bp_path), Path = bp_path, isFolder = true };
-            readFolderToBrowser(bp_item, FileBrowser.Items, bp_path);
-            FileBrowser.Items.Add(bp_item);
+            FileBrowserData root_folder = new FileBrowserData { Filename = Path.GetFileName(projectPath), Path = projectPath, isFolder = true };
+            readFolderToBrowser(root_folder, FileBrowser.Items, projectPath);
+            FileBrowser.Items.Add(root_folder);
 
-            if ((bool)Application.Current.Properties["has_rp"] == true)
-            {
-                string rp_path = Util.Util.com_mojang_path + "/" + Application.Current.Properties["rp_folder"];
-                FileBrowserData rp_item = new FileBrowserData { Filename = Path.GetFileName(rp_path), Path = rp_path, isFolder = true };
-                readFolderToBrowser(rp_item, FileBrowser.Items, rp_path);
-                FileBrowser.Items.Add(rp_item);
-            }
+        }
+
+        public ContextMenu GetFileContextMenu(FileBrowserData data)
+        {
+            //TODO: this would cause a lot of memory use for large projects(> 100 items)
+            ContextMenu contextMenu = new ContextMenu();
+
+            MenuItem mCreateFolder = new MenuItem();
+            mCreateFolder.Header = "Create Folder";
+            contextMenu.Items.Add(mCreateFolder);
+            mCreateFolder.Click += (object s, RoutedEventArgs e) => { 
+                // Create a new folder
+
+            };
+
+            MenuItem mCreateFile = new MenuItem();
+            mCreateFile.Header = "Create File";
+            contextMenu.Items.Add(mCreateFile);
+
+            MenuItem mDelete = new MenuItem();
+            mDelete.Header = "Delete";
+            contextMenu.Items.Add(mDelete);
+
+            MenuItem mProperties = new MenuItem();
+            mProperties.Header = "Properties";
+            contextMenu.Items.Add(mProperties);
+
+            return contextMenu;
         }
 
         private ItemCollection readFolderToBrowser(FileBrowserData i, ItemCollection c, string path)
         {
             foreach (string dir in Directory.GetDirectories(path))
             {
-                FileBrowserData item = new FileBrowserData { Filename = Path.GetFileName(dir), Icon = bmpFolder, isFolder = true, Path=dir };
+                FileBrowserData item = new FileBrowserData { Filename = Path.GetFileName(dir), Icon = bmpFolder, isFolder = true, Path = dir };
+                item.ContextMenu = GetFileContextMenu(item);
                 if (i != null)
                 {
                     i.Contents.Add(item);
@@ -153,7 +197,8 @@ namespace ThaumaStudio.Editor
                 {
                     i.Contents.Add(data);
                 }
-                else {
+                else
+                {
                     c.Add(data);
                 }
             }
@@ -165,55 +210,76 @@ namespace ThaumaStudio.Editor
             FileBrowserData data = (FileBrowserData)e.NewValue;
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Interoperability", "CA1416:Validate platform compatibility", Justification = "<Pending>")]
         private void FileBrowserItem_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             FileBrowserData data = (FileBrowserData)((TreeViewItem)e.Source).DataContext;
             if (!data.isFolder)
             {
+                if (openedFiles.ContainsKey(data.Path))
+                {
+                    openedFiles[data.Path].IsActive = true;
+                    return;
+                }
                 // Docking panel that can be floating
                 LayoutDocument content = new LayoutDocument();
 
                 // All the controls
                 DockPanel dp = new DockPanel();
                 StackPanel tb = new StackPanel() { Orientation = Orientation.Horizontal, Height = 32 };
-                TextEditor editor = new ICSharpCode.AvalonEdit.TextEditor() { ShowLineNumbers=true };
+                tb.SetResourceReference(BackgroundProperty, "var_backgroundColorDarker");
+                TextEditorOptions options = new TextEditorOptions();
+                options.ShowTabs = false;
+
+                TextEditor editor = new TextEditor() { ShowLineNumbers = true, Options = options };
 
                 // Toolbar buttons
-                var btnSave = new Button() {
+                var btnSave = new Button()
+                {
                     Width = 32,
                     ToolTip = "Save (Ctrl+S)",
                     Style = this.FindResource("ToolBarButton") as Style,
-                    Content = new Image() { 
+                    Content = new Image()
+                    {
                         Margin = new Thickness(4),
-                        Source = bmpSave, Stretch=Stretch.UniformToFill
+                        Source = bmpSave,
+                        Stretch = Stretch.UniformToFill
                     }
                 };
-                btnSave.Click += ((object _sender, RoutedEventArgs _e) => {
+                btnSave.Click += ((object _sender, RoutedEventArgs _e) =>
+                {
                     Editor_SaveFile(editor, data, content);
                 });
 
-                var btnSaveAs = new Button() {
+                var btnSaveAs = new Button()
+                {
                     Width = 32,
                     ToolTip = "Save (Ctrl+Shift+S)",
                     Style = this.FindResource("ToolBarButton") as Style,
-                    Content = new Image() {
+                    Content = new Image()
+                    {
                         Margin = new Thickness(4),
-                        Source = bmpSaveAs, Stretch = Stretch.UniformToFill
-                    } 
+                        Source = bmpSaveAs,
+                        Stretch = Stretch.UniformToFill
+                    }
                 };
-                btnSaveAs.Click += ((object _sender, RoutedEventArgs _e) => {
+                btnSaveAs.Click += ((object _sender, RoutedEventArgs _e) =>
+                {
                     Editor_SaveFileAs(editor, data, content);
                 });
 
                 // Add all to the layouts
-                tb.Children.Add(btnSave); tb.Children.Add(btnSaveAs);
+                tb.Children.Add(btnSave); 
+                tb.Children.Add(btnSaveAs);
+
                 dp.Children.Add(tb);
                 DockPanel.SetDock(tb, Dock.Top);
                 dp.Children.Add(editor);
 
                 // Open the file and set syntax highlighting
-                editor.Text = File.ReadAllText(data.Path);
-                if (data.Filename.EndsWith(".json") || data.Filename.EndsWith(".js")) {
+                editor.Text = File.ReadAllText(data.Path).Replace("    ", "\t");
+                if (data.Filename.EndsWith(".json") || data.Filename.EndsWith(".js") || data.Filename.EndsWith(".lua"))
+                {
                     InitializeEditor(editor, data.Path);
                 }
 
@@ -224,7 +290,8 @@ namespace ThaumaStudio.Editor
                 content.IsSelected = true;
 
                 // Handle editor events
-                editor.TextChanged += ((object o, EventArgs ev) => {
+                editor.TextChanged += ((object o, EventArgs ev) =>
+                {
                     if (content.Title != null)
                         Editor_OnChange(editor, content);
                 });
@@ -242,15 +309,18 @@ namespace ThaumaStudio.Editor
                 });
 
                 // Handle tab closing event
-                content.Closing += ((object o, CancelEventArgs ev) => {
-                    if (content.Title.EndsWith("*")) {
+                content.Closing += ((object o, CancelEventArgs ev) =>
+                {
+                    if (content.Title.EndsWith("*"))
+                    {
                         MessageBoxResult res = askYesNoCancel("File is not saved, would you like to save?", "Warning");
                         if (res == MessageBoxResult.Yes)
                         {
                             // Proceed with saving
                             Editor_SaveFile(editor, data, content);
                         }
-                        else if (res == MessageBoxResult.No) { 
+                        else if (res == MessageBoxResult.No)
+                        {
                             // Proceed without saving
                         }
                         else
@@ -260,6 +330,9 @@ namespace ThaumaStudio.Editor
                         }
                     }
                 });
+
+                // Add to opened files
+                openedFiles.Add(data.Path, content);
             }
         }
         /** Called when the editor requesting to save a file */
@@ -286,20 +359,43 @@ namespace ThaumaStudio.Editor
             RefreshFileBrowser();
         }
         /** Save the currently opened tab file */
-        public void SaveFile(string content, string path) {
+        public void SaveFile(string content, string path)
+        {
             File.WriteAllText(path, content);
         }
 
         /** When an editor's text content changed */
-        public void Editor_OnChange(TextEditor editor, LayoutDocument doc) {
-            if (!doc.Title.EndsWith("*")) {
+        public void Editor_OnChange(TextEditor editor, LayoutDocument doc)
+        {
+            if (!doc.Title.EndsWith("*"))
+            {
                 doc.Title += "*";
             }
         }
-
+        public void LoadLuaHighlighter()
+        {
+            /// Enable custom highlighter
+            XshdSyntaxDefinition xshd;
+            using (Stream s = Assembly.GetExecutingAssembly().GetManifestResourceStream("ThaumaStudio.Resources.highlighting.LuaHighlighting.xml"))
+            {
+                using (XmlTextReader reader = new XmlTextReader(s))
+                {
+                    xshd = HighlightingLoader.LoadXshd(reader);
+                    LuaHighlightDef = HighlightingLoader.Load(xshd, null);
+                }
+            }
+        }
         /** Initialize AvalonEdit editor */
-        public void InitializeEditor(TextEditor editor, string path) {
+        public void InitializeEditor(TextEditor editor, string path)
+        {
+
+            if (LuaHighlightDef == null)
+            {
+                LoadLuaHighlighter();
+            }
+            // Set the highlighting
             SetEditorTheme(editor, path);
+
             editor.ContextMenu = new ContextMenu();
 
             var item = new MenuItem();
@@ -321,48 +417,93 @@ namespace ThaumaStudio.Editor
             item.Header = "Delete";
             item.Command = ApplicationCommands.Delete;
             editor.ContextMenu.Items.Add(item);
+            // Set font
+            //editor.FontFamily = FFSourceCodePro;
         }
 
         /** Set the editor theme */
-        private void SetEditorTheme(TextEditor editor, string path) {
-            editor.SyntaxHighlighting = HighlightingManager.Instance.GetDefinition("JavaScript");
-            var highlighting = editor.SyntaxHighlighting;
+        private void SetEditorTheme(TextEditor editor, string path)
+        {
 
-            // Digits
-            var digitHighlighting = highlighting.NamedHighlightingColors.First(c => c.Name == "Digits");
-            digitHighlighting.Foreground = new SimpleHighlightingBrush((Color)FindResource("ch_numerical"));
+            // Set highlighted language
+            if (path.EndsWith(".js") || path.EndsWith(".json"))
+            {
+                editor.SyntaxHighlighting = HighlightingManager.Instance.GetDefinition("JavaScript");
+                var highlighting = editor.SyntaxHighlighting;
 
-            // String
-            var stringHighlighting = highlighting.NamedHighlightingColors.First(c => c.Name == "String");
-            stringHighlighting.Foreground = new SimpleHighlightingBrush((Color)FindResource("ch_string"));
+                // Digits
+                var digitHighlighting = highlighting.NamedHighlightingColors.First(c => c.Name == "Digits");
+                digitHighlighting.Foreground = new SimpleHighlightingBrush((Color)FindResource("ch_numerical"));
 
-            // Comment
-            var commentHighlighting = highlighting.NamedHighlightingColors.First(c => c.Name == "Comment");
-            commentHighlighting.Foreground = new SimpleHighlightingBrush((Color)FindResource("ch_comment"));
+                // String
+                var stringHighlighting = highlighting.NamedHighlightingColors.First(c => c.Name == "String");
+                stringHighlighting.Foreground = new SimpleHighlightingBrush((Color)FindResource("ch_string"));
 
-            // JavaScriptKeyWords" foreground="Blue" exampleText="return myVariable;" />
-            var JavaScriptKeyWords = highlighting.NamedHighlightingColors.First(c => c.Name == "JavaScriptKeyWords");
-            JavaScriptKeyWords.Foreground = new SimpleHighlightingBrush((Color)FindResource("ch_special1"));
+                // Comment
+                var commentHighlighting = highlighting.NamedHighlightingColors.First(c => c.Name == "Comment");
+                commentHighlighting.Foreground = new SimpleHighlightingBrush((Color)FindResource("ch_comment"));
 
-            // JavaScriptIntrinsics" foreground="Blue" exampleText="Math.random()" />
-            var JavaScriptIntrinsics = highlighting.NamedHighlightingColors.First(c => c.Name == "JavaScriptIntrinsics");
-            JavaScriptIntrinsics.Foreground = new SimpleHighlightingBrush((Color)FindResource("ch_special2"));
+                // JavaScriptKeyWords" foreground="Blue" exampleText="return myVariable;" />
+                var JavaScriptKeyWords = highlighting.NamedHighlightingColors.First(c => c.Name == "JavaScriptKeyWords");
+                JavaScriptKeyWords.Foreground = new SimpleHighlightingBrush((Color)FindResource("ch_special1"));
 
-            // JavaScriptLiterals foreground="Blue" exampleText="return false;" />
-            var JavaScriptLiterals = highlighting.NamedHighlightingColors.First(c => c.Name == "JavaScriptLiterals");
-            JavaScriptLiterals.Foreground = new SimpleHighlightingBrush((Color)FindResource("ch_special3"));
+                // JavaScriptIntrinsics" foreground="Blue" exampleText="Math.random()" />
+                var JavaScriptIntrinsics = highlighting.NamedHighlightingColors.First(c => c.Name == "JavaScriptIntrinsics");
+                JavaScriptIntrinsics.Foreground = new SimpleHighlightingBrush((Color)FindResource("ch_special2"));
 
-            // JavaScriptGlobalFunctions foreground="Blue" exampleText="escape(myString);" />
-            var JavaScriptGlobalFunctions = highlighting.NamedHighlightingColors.First(c => c.Name == "JavaScriptGlobalFunctions");
-            JavaScriptGlobalFunctions.Foreground = new SimpleHighlightingBrush((Color)FindResource("ch_special1"));
+                // JavaScriptLiterals foreground="Blue" exampleText="return false;" />
+                var JavaScriptLiterals = highlighting.NamedHighlightingColors.First(c => c.Name == "JavaScriptLiterals");
+                JavaScriptLiterals.Foreground = new SimpleHighlightingBrush((Color)FindResource("ch_special3"));
 
-            // Set the syntaxHighlighting
-            editor.SyntaxHighlighting = highlighting;
+                // JavaScriptGlobalFunctions foreground="Blue" exampleText="escape(myString);" />
+                var JavaScriptGlobalFunctions = highlighting.NamedHighlightingColors.First(c => c.Name == "JavaScriptGlobalFunctions");
+                JavaScriptGlobalFunctions.Foreground = new SimpleHighlightingBrush((Color)FindResource("ch_special1"));
+
+                // Set the syntaxHighlighting
+                editor.SyntaxHighlighting = highlighting;
+            }
+            else if (path.EndsWith(".lua"))
+            {
+                var highlighting = LuaHighlightDef;
+
+                // Digits
+                var digitHighlighting = highlighting.NamedHighlightingColors.First(c => c.Name == "Digits");
+                digitHighlighting.Foreground = new SimpleHighlightingBrush((Color)FindResource("ch_numerical"));
+
+                // String
+                var stringHighlighting = highlighting.NamedHighlightingColors.First(c => c.Name == "String");
+                stringHighlighting.Foreground = new SimpleHighlightingBrush((Color)FindResource("ch_string"));
+
+                // Comment
+                var commentHighlighting = highlighting.NamedHighlightingColors.First(c => c.Name == "Comment");
+                commentHighlighting.Foreground = new SimpleHighlightingBrush((Color)FindResource("ch_comment"));
+
+                // JavaScriptKeyWords" foreground="Blue" exampleText="return myVariable;" />
+                var JavaScriptKeyWords = highlighting.NamedHighlightingColors.First(c => c.Name == "LuaKeyWords");
+                JavaScriptKeyWords.Foreground = new SimpleHighlightingBrush((Color)FindResource("ch_special1"));
+
+                // JavaScriptIntrinsics" foreground="Blue" exampleText="Math.random()" />
+                //var JavaScriptIntrinsics = highlighting.NamedHighlightingColors.First(c => c.Name == "LuaIntrinsics");
+                //JavaScriptIntrinsics.Foreground = new SimpleHighlightingBrush((Color)FindResource("ch_special2"));
+
+                // JavaScriptLiterals foreground="Blue" exampleText="return false;" />
+                var JavaScriptLiterals = highlighting.NamedHighlightingColors.First(c => c.Name == "LuaLiterals");
+                JavaScriptLiterals.Foreground = new SimpleHighlightingBrush((Color)FindResource("ch_special3"));
+
+                // JavaScriptGlobalFunctions foreground="Blue" exampleText="escape(myString);" />
+                var JavaScriptGlobalFunctions = highlighting.NamedHighlightingColors.First(c => c.Name == "LuaGlobalFunctions");
+                JavaScriptGlobalFunctions.Foreground = new SimpleHighlightingBrush((Color)FindResource("ch_special1"));
+
+                // LuaObjects foreground="Blue" exampleText="Object.function(myString);" />
+                var LuaObjects = highlighting.NamedHighlightingColors.First(c => c.Name == "Object");
+                LuaObjects.Foreground = new SimpleHighlightingBrush((Color)FindResource("ch_special4"));
+                editor.SyntaxHighlighting = highlighting;
+            }
         }
         private void FileBrowserItem_MouseClick(object sender, MouseButtonEventArgs e)
         {
             FileBrowserData data;
-            if(e.Source is ContentPresenter)
+            if (e.Source is ContentPresenter)
                 data = (FileBrowserData)((ContentPresenter)e.Source).DataContext;
             if (e.Source is ItemsPresenter)
                 data = (FileBrowserData)((ItemsPresenter)e.Source).DataContext;
@@ -382,23 +523,99 @@ namespace ThaumaStudio.Editor
         protected override void OnGotFocus(RoutedEventArgs e)
         {
             base.OnGotFocus(e);
-            RefreshFileBrowser(); 
+            RefreshFileBrowser();
         }
 
+        private void ButtonExport_Click(object sender, RoutedEventArgs e)
+        {
+            /// <summary>
+            /// Export the game to a ready executable
+            /// </summary>
+            
+
+            // Copy the Runtime
+            string exportPath = projectPath + Path.DirectorySeparatorChar + "bin" + Path.DirectorySeparatorChar;
+            TextBoxOutput.Text+= Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            Util.Util.CopyFilesRecursively(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "/Runtime", exportPath);
+            string executablePath = exportPath + Path.GetFileName(projectPath) + ".exe";
+            if (File.Exists(executablePath))
+                File.Delete(executablePath);
+
+            // Rename it to game's name
+            File.Move(exportPath + "ThaumaRuntime.exe", executablePath);
+
+            // Change the file icon
+            IconChanger iconChanger = new IconChanger();
+            ICResult result = iconChanger.ChangeIcon(executablePath, "D:\\Programming\\C++Projects\\old\\ArmoEngine\\res\\armo-icon.ico");
+            if (result == ICResult.Success)
+            {
+                TextBoxOutput.Text += "Release Build SUCCESS";
+            }
+            else
+            {
+                TextBoxOutput.Text += "Release Build FAILED";
+            }
+        }
+
+        private void ButtonPlay_Click(object sender, RoutedEventArgs e)
+        {
+            TextBoxOutput.Text = "";
+            // Run the gameStringBuilder outputBuilder;
+            ProcessStartInfo processStartInfo;
+            Process process;
+
+            var outputBuilder = new StringBuilder();
+
+            processStartInfo = new ProcessStartInfo();
+            processStartInfo.CreateNoWindow = true;
+            processStartInfo.RedirectStandardOutput = true;
+            processStartInfo.RedirectStandardInput = true;
+            processStartInfo.RedirectStandardError = true;
+            processStartInfo.UseShellExecute = false;
+            processStartInfo.Arguments = "\"" + projectPath + "\"";
+            processStartInfo.FileName = "./Runtime/ThaumaRuntime.exe";
+
+            process = new Process();
+            process.StartInfo = processStartInfo;
+            process.OutputDataReceived += new DataReceivedEventHandler(OutputHandler);
+            process.ErrorDataReceived += new DataReceivedEventHandler(OutputHandler);
+
+            process.Start();
+            process.BeginOutputReadLine();
+            process.BeginErrorReadLine();
+            //process.WaitForExit();
+            //process.CancelOutputRead();
+            //process.CancelErrorRead();
+        }
+
+        public void OutputHandler(object sendingProcess, DataReceivedEventArgs outLine)
+        {
+            //* Do your stuff with the output (write to console/log/StringBuilder)
+            this.Dispatcher.Invoke(() =>
+            {
+                // your code here.
+                Console.WriteLine(outLine.Data);
+                TextBoxOutput.Text += outLine.Data + "\n";
+            });
+        }
     }
 
-    public class EditorData {
+    public class EditorData
+    {
         public ItemCollection fileBrowserItems;
     }
 
-    public class FileBrowserData {
-        public FileBrowserData() {
+    public class FileBrowserData
+    {
+        public FileBrowserData()
+        {
             Contents = new List<FileBrowserData>();
         }
         public String Filename { get; set; }
         public String Path { get; set; }
         public BitmapSource Icon { get; set; }
         public List<FileBrowserData> Contents { get; private set; }
+        public ContextMenu ContextMenu { get; set; }
 
         public bool isFolder { get; set; } = false;
     }

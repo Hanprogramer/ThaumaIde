@@ -1,0 +1,93 @@
+﻿<?xml version="1.0"?>
+<SyntaxDefinition name="Lua" extensions=".lua" xmlns="http://icsharpcode.net/sharpdevelop/syntaxdefinition/2008">
+	<Color name="Digits" foreground="DarkBlue" exampleText="3.14" />
+	<Color name="Comment" foreground="Green" exampleText="-- comment" />
+	<Color name="String" foreground="Sienna" exampleText="text = &quot;Hello, World!&quot;;" />
+	<Color name="Character" foreground="Sienna" exampleText="var char = 'a';" />
+	<Color name="Regex" foreground="Sienna" exampleText="/abc/m" />
+	<Color name="LuaKeyWords" foreground="Blue" exampleText="return myVariable;" />
+	<Color name="LuaLiterals" foreground="Blue" exampleText="return false;" />
+	<Color name="LuaGlobalFunctions" foreground="Blue" exampleText="escape(myString);" />
+	<Color name="Object" foreground="Blue" exampleText="Object.function()"/>
+	<RuleSet ignoreCase="false">
+		<Keywords color="LuaKeyWords">
+			<Word>and</Word>
+			<Word>end</Word>
+			<Word>in</Word>
+			<Word>repeat</Word>
+			<Word>break</Word>
+			<Word>false</Word>
+			<Word>local</Word>
+			<Word>return</Word>
+			<Word>do</Word>
+			<Word>for</Word>
+			<Word>nil</Word>
+			<Word>then</Word>
+			<Word>else</Word>
+			<Word>function</Word>
+			<Word>not</Word>
+			<Word>true</Word>
+			<Word>elseif</Word>
+			<Word>if</Word>
+			<Word>or</Word>
+			<Word>until</Word>
+			<Word>while</Word>
+		</Keywords>
+		<Keywords color="LuaLiterals">
+			<Word>false</Word>
+			<Word>global</Word>
+			<Word>true</Word>
+			<Word>local</Word>
+			<Word>nil</Word>
+		</Keywords>
+		<Keywords color="LuaGlobalFunctions">
+			<Word>print</Word>
+			<Word>assert</Word>
+			<Word>collectgarbage</Word>
+			<Word>error</Word>
+			<Word>dofile</Word>
+			<Word>gcinfo</Word>
+			<Word>getfenv</Word>
+			<Word>ipairs</Word>
+			<Word>next</Word>
+			<Word>pairs</Word>
+			<Word>pcall</Word>
+			<Word>rawequal</Word>
+			<Word>rawget</Word>
+			<Word>rawset</Word>
+			<Word>select</Word>
+			<Word>setfenv</Word>
+			<Word>setmetatable</Word>
+			<Word>tonumber</Word>
+			<Word>tostring</Word>
+			<Word>type</Word>
+			<Word>unpack</Word>
+			<Word>xpcall</Word>
+			<Word>coroutine</Word>
+		</Keywords>
+		
+        <Span color = "Comment" multiline="true">
+            <Begin>--\[\[</Begin>
+            <End>]]</End>
+        </Span>
+		<Span color="Comment" multiline="false">
+			<Begin>--</Begin>
+		</Span>
+		<Span color="String" multiline="true">
+			<Begin>"</Begin>
+			<End>"</End>
+			<RuleSet>
+				<Span begin="\\" end="." />
+			</RuleSet>
+		</Span>
+		<Span color="Character">
+			<Begin>'</Begin>
+			<End>'</End>
+			<RuleSet>
+				<Span begin="\\" end="." />
+			</RuleSet>
+		</Span>
+		<Rule color="Object">\w+(?=\.)</Rule>
+		<Rule color="Digits">\b0[xX][0-9a-fA-F]+|(\b\d+(\.[0-9]+)?|\.[0-9]+)([eE][+-]?[0-9]+)?</Rule>
+	</RuleSet>
+</SyntaxDefinition>

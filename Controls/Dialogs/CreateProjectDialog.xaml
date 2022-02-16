@@ -27,19 +27,11 @@
             <StackPanel Grid.Column="0">
                 <Label ToolTip="Project Name. Default: 'My Project'" Content="Name"></Label>
                 <Label ToolTip="Put something descriptive" Content="Description" Height="100"></Label>
-                <Label ToolTip="Project type which will be generated" Content="Type"></Label>
-                <Label ToolTip="For naming stuffs such as items, blocks, etc. Can be changed later. Default: 'cc'" Content="Namespace"></Label>
                 <Label ToolTip="Directory name which will be used in the file browser." Content="Directory"></Label>
             </StackPanel>
             <StackPanel Grid.Column="1">
                 <TextBox TextChanged="OnNameChanged"  Margin="2" Padding="2" Name="projName"></TextBox>
                 <TextBox Margin="2" Padding="2" Height="96"  Name="projDesc"></TextBox>
-                <ComboBox Margin="2" Padding="2" Name="projType" SelectedIndex="0">
-                    <ComboBoxItem Content="Addon(Behavior &amp; Resource)"/>
-                    <ComboBoxItem Content="Behavior Pack"/>
-                    <ComboBoxItem Content="Resource Pack"/>
-                </ComboBox>
-                <TextBox  Margin="2" Padding="2" Name="projNamespace"></TextBox>
                 <TextBlock Margin="2" Padding="2" Text="/" Name="projDir"></TextBlock>
             </StackPanel>
         </Grid>

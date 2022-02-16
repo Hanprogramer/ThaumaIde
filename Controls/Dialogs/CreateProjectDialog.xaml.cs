@@ -14,9 +14,19 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using Newtonsoft.Json;
+using Path = System.IO.Path;
+using System.Reflection;
 
 namespace ThaumaStudio.Controls.Dialogs
 {
+    public class ProjectJson
+    {
+        public int[] thauma = { 0, 0, 1 };
+        public string project_name = "MyProject";
+        public string main = "main.lua";
+        public string description = "Made with Thauma Studio";
+    }
     /// <summary>
     /// Interaction logic for CreateProjectDialog.xaml
     /// </summary>
@@ -30,108 +40,97 @@ namespace ThaumaStudio.Controls.Dialogs
         }
 
 
-        public Boolean isAllInfoNeededOkay() {
-            if (this.projName.Text == "" || this.projDesc.Text == "" || this.projNamespace.Text == "")
+        public Boolean isAllInfoNeededOkay()
+        {
+            if (this.projName.Text == "" || this.projDesc.Text == "")
                 return false;
             return true;
         }
 
-        public void fillInInformationNeeded() {
-            if (this.projName.Text == "") {
+        public void fillInInformationNeeded()
+        {
+            if (this.projName.Text == "")
+            {
                 this.projName.Text = "My Project";
             }
-            if (this.projDesc.Text == "") {
-                this.projDesc.Text = "Made using CoreCoder:Studio";
-            }
-            if (this.projNamespace.Text == "") {
-                this.projNamespace.Text = "cc";
+            if (this.projDesc.Text == "")
+            {
+                this.projDesc.Text = "Made using Thauma Studio";
             }
         }
 
-        public void CreateProject() {
+        public void CreateProject()
+        {
+
             if (this.isAllInfoNeededOkay())
             {
-                // Check for directory name availability
-                if (Directory.Exists(Util.Util.com_mojang_path + this.projDir.Text + " BP") && // check for bp folder existance
-                    (this.projType.SelectedIndex == 0 || this.projType.SelectedIndex == 1) ) // is BP or addon
+                string targetPath = this.projDir.Text;
+                string targetName = this.projName.Text;
+                // Actually start making the project
+                Directory.CreateDirectory(targetPath);
+
+                // Create project.json
+                ProjectJson proj = new ProjectJson();
+                proj.project_name = targetName;
+                proj.description = projDesc.Text;
+                string json = JsonConvert.SerializeObject(proj, Formatting.Indented);
+                File.WriteAllText(targetPath + "project.json", json);
+
+                // Creates main.lua 
+                string content = GetTemplateMainLua();// Assembly.GetExecutingAssembly().GetManifestResourceStream("").Read();
+                File.WriteAllText(targetPath + "main.lua", content);
+
+
+                /// Writes icon.png
+                content = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAkklEQVQ4jcWTwQ2AIAxFPyzgEMQFnIVlnMBlnKULEIZgAjwoBmgRogf/sfQ9SlIU5MRGXfUKEQD2ZRFpS8S4XBA3YzBPU+PyMy4ErN7fbBIMwZJEp+IoXPcqALH15l4sEXS/7Tn/CVwI7wUJ/jRBLlCWqLCO3M72oB5NAqVztsojkVb5lgBAS3SBBce+Zy4SwvoPgSQ37k+vrRYAAAAASUVORK5CYII=";
+                byte[] tempBytes = Convert.FromBase64String(content);
+                File.WriteAllBytes(targetPath + "icon.png", tempBytes);
+
+                /// Creates the folder structure
+                string[] folders = { "Objects", "Rooms", "Textures", "Sounds", "Scripts" };
+                foreach (string f in folders)
                 {
-                    MessageBox.Show("Project with that folder name already exists!");
-                    return;
-                }
-                if (Directory.Exists(Util.Util.com_mojang_path + this.projDir.Text + " RP") && // check for bp folder existance
-                    (this.projType.SelectedIndex == 0 || this.projType.SelectedIndex == 2)) // is BP or addon
-                {
-                    MessageBox.Show("Project with that folder name already exists!");
-                    return;
-                }
-                String dependencies = ""; // RP UUID if made
-                // If all passes, then a project is ready to be made
-                // Create BP folder
-                if (this.projType.SelectedIndex == 0 || this.projType.SelectedIndex == 1)
-                {
-                    String path = Util.Util.com_mojang_path + "/development_behavior_packs/" + this.projDir.Text + " BP";
-                    // Make the folder
+                    var path = targetPath + f;
                     Directory.CreateDirectory(path);
-                    // Write manifest
-                    StreamWriter w = File.CreateText(path + "/manifest.json");
-
-                    ProjectInfo info = new ProjectInfo();
-                    info.name = this.projName.Text + " BP";
-                    info.description = this.projDesc.Text;
-                    info.dependencies = new List<String>();
-                    info.uuid = Guid.NewGuid().ToString();
-                    if (this.projType.SelectedIndex == 0) {
-                        // if addon
-                        info.dependencies.Add(dependencies = Guid.NewGuid().ToString());
-                    }
-                    info.type = "data";
-                    info.version = "1";
-
-                    // Write manifest and pack image
-                    Util.Util.SavePackImage(path);
-                    w.Write(Util.Util.ProjectInfoToJSON(info));
-                    w.Close();
                 }
-                // Create RP folder
-                if (this.projType.SelectedIndex == 0 || this.projType.SelectedIndex == 2)
-                {
-                    String path = Util.Util.com_mojang_path + "/development_resource_packs/" + this.projDir.Text + " RP";
-                    // Make the folder
-                    Directory.CreateDirectory(path);
-                    // Write manifest
-                    StreamWriter w = File.CreateText(path + "/manifest.json");
 
-                    ProjectInfo info = new ProjectInfo();
-                    info.name = this.projName.Text + " RP";
-                    info.description = this.projDesc.Text;
-                    info.dependencies = new List<String>();
-                    info.type = "resources";
-                    info.version = "1";
-                    info.uuid = dependencies == "" ? Guid.NewGuid().ToString() : dependencies;
-
-                    // Write manifest and pack image
-                    Util.Util.SavePackImage(path);
-                    w.Write(Util.Util.ProjectInfoToJSON(info));
-                    w.Close();
-                }
-                this.parent.RefreshPacksFolders();
-                this.Close();
+                // Closes the dialog
+                this.DialogResult = true;
             }
-            else {
+            else
+            {
                 this.fillInInformationNeeded();
             }
-        }
-
-        /// Events
-
-        public void OnCreateClick(object sender, RoutedEventArgs e) {
-            CreateProject();
         }
 
 
         private void OnNameChanged(object sender, TextChangedEventArgs e)
         {
-            this.projDir.Text = "/" + Regex.Replace(this.projName.Text, "[\\\\|/\"':$#*%&<>]", " ");
+            this.projDir.Text = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + Path.DirectorySeparatorChar
+                + "ThaumaStudio" + Path.DirectorySeparatorChar +
+                Regex.Replace(this.projName.Text, "[\\\\|/\"':$#*%&<>]", "_") + Path.DirectorySeparatorChar; // Folder name
+        }
+
+        private void OnCreateClick(object sender, RoutedEventArgs e)
+        {
+            CreateProject();
+        }
+
+        private string GetTemplateMainLua()
+        {
+            string strResourceName = "main.lua";
+
+            Assembly asm = Assembly.GetExecutingAssembly();
+            string strTxt;
+            using (Stream rsrcStream = asm.GetManifestResourceStream("ThaumaStudio.Resources." + strResourceName))
+            {
+                using (StreamReader sRdr = new StreamReader(rsrcStream))
+                {
+                    //For instance, gets it as text
+                    strTxt = sRdr.ReadToEnd();
+                }
+            }
+            return strTxt;
         }
     }
 }

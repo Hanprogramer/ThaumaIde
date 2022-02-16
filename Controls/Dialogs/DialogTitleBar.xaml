@@ -36,7 +36,7 @@
         </Grid.Resources>
 
         <Rectangle Fill="#002E2E2E" Height="32" VerticalAlignment="Top"/>
-        <Label Name="TitleText" Content="CoreCoder:Studio" HorizontalAlignment="Left" VerticalAlignment="Top" Foreground="White" Margin="3,1,0,0"/>
+        <Label Name="TitleText" Content="Thauma Studio" HorizontalAlignment="Left" VerticalAlignment="Top" Foreground="White" Margin="3,1,0,0"/>
         <!--Title Bar buttons-->
         <Button Click="OnCloseButtonClick" ToolTip="Close" Style="{StaticResource TitleBarButton}"  WindowChrome.IsHitTestVisibleInChrome="True" VerticalAlignment="Top" Height="32" HorizontalAlignment="Right" Width="48">
             <Image Height="32" VerticalAlignment="Center" Source="../close.png" HorizontalAlignment="Center" Width="48"/>
